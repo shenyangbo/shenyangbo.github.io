@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+    <!--H5页面窗口自动调整到设备宽度，并禁止用户缩放页面-->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,  user-scalable=no">
+
+    <!--当网站添加到主屏幕快速启动方式，可隐藏地址栏，仅针对ios的safari-->
+    <meta content="yes" name="apple-mobile-web-app-capable">
+
+    <!--将网站添加到主屏幕快速启动方式，仅针对ios的safari顶端状态条的样式-->
+    <meta content="black" name="apple-mobile-web-app-status-bar-style">
+
+    <!--忽略将页面中的数字识别为电话号码-->
+    <meta content="telephone=no" name="format-detection">
+
+    <!--忽略Android平台中对邮箱地址的识别-->
+    <meta content="email=no" name="format-detection">
+
+    <title>中国电信广东公司</title>
+
+    <link rel="stylesheet" href="css/index.css">
+
+    <!--弹窗js-->
+    <script src="js/jquery-1.12.0.min.js"></script>
+    <script src="js/layer/layer.js"></script>
+
+</head>
+<body style="padding: 15px">
+
+<div class="info">
+    <!--<p>业务号码</p>-->
+    <input type="tel" placeholder="手机/固话/宽带上网账号/iptv账号">
+</div>
+
+<div class="info"  style="margin-top: 20px">
+    <!--<p>归属地市</p>-->
+    <select name="" id="">
+        <option value="">深圳</option>
+        <option value="">广州</option>
+    </select>
+</div>
+
+<span style="color: #4995fd;float: right;line-height: 32px;font-size: 15px">忘记宽带/iptv账号</span>
+
+<div class="biaoge">
+    <p style="color: #666666;margin-bottom: 8px">月结费用:<span style="color: #83bc07">详情</span></p>
+    <table cellspacing="0">
+        <tr>
+            <td style="font-weight: bolder">当前号码欠费</td>
+            <td >20.00元</td>
+        </tr>
+        <tr>
+            <td  style="font-weight: bolder;" class="td"  >同账户编号合计欠费</td>
+            <td >200.00元</td>
+        </tr>
+    </table>
+</div>
+
+<div class="chargeway">
+    <p style="color: #666666;margin-bottom: 10px">充值类型</p>
+
+    <div class="radiostyle">
+        <input type="radio" id="benji" name="1" checked>
+        <label for="benji">本机缴费</label>
+        <!--<br>-->
+       <span>（仅缴纳当前号码欠费）</span>
+    </div>
+
+    <div class="radiostyle">
+        <input type="radio" id="hebing" name="1">
+        <label for="hebing">合并缴费</label>
+        <!--<br>-->
+        <span>（缴纳当前号码同账户下所有号码欠费）</span>
+    </div>
+</div>
+
+<div class="tishi">
+    <p style="font-weight: bolder">本次缴费金额：
+        <span style="font-size: 18px">200.00元</span>
+    </p>
+    <p>
+        温馨提醒： <br>
+        1、合并缴费金额为同账户名下所有号码欠费总额，无需单个号码重复操作。<br>
+        2、如您已确认缴清费用，无需理会页面欠费信息，系统正在处理，敬请稍后查询。<br>
+        3、该页面仅支持缴纳月结欠费，如需缴实时话费，请点击
+        <a href="" onclick="new Function(information)();">其他费用。</a>
+    </p>
+
+    <button>确定</button>
+</div>
+
+
+
+
+
+<!--填写客户密码-->
+    <div id="information" style="display: none;">
+        <div style="padding: 40px 0px">
+            <input type="tel" maxlength="6" style="border: 1px solid #ccc;width: 100%;border-radius: 4px;text-indent: 10px" placeholder="输入客户密码关联">
+            <p style="text-align: right;color: #4995fd;line-height: 32px">忘记密码</p>
+            <button onclick="closeLayer()" class="btn1">验证</button>
+
+            <!--下面两行文字分场景显示-->
+            <!--<span class="layerspan">为保护用户隐私，查询同名下号码需验证客户密码。</span>-->
+            <span class="layerspan">您目前为验证码关联，如需查询同名下号码，需使用客户密码关联。</span>
+        </div>
+    </div>
+
+<!--填写客户密码-->
+<div id="list" style="display: none;">
+    <div class="list">
+        同账户编号业务
+       <ul>
+           <li>号码1 </li>
+           <li>号码2 </li>
+           <li>号码3 </li>
+           <li>号码4 </li>
+           <li>号码5 </li>
+           <li>号码6 </li>
+       </ul>
+        <button onclick="closeLayer(list)">确定</button>
+    </div>
+</div>
+
+<!--本机缴费-->
+<div id="single" style="display: none">
+    本机缴费--仅缴纳当前号码欠费。
+</div>
+</body>
+
+
+<script>
+
+   $('.td').on('click', function(){
+       layer.open({
+           type: 1,
+           title: false,
+           closeBtn: 1,
+           area: ['80%', 'auto'],
+           shadeClose: true,
+           content: $('#information').html()
+       });
+   });
+
+    $('.td').on('click', function(){
+        layer.open({
+            type: 1,
+            title: false,
+            closeBtn: 1,
+            area: ['80%', 'auto'],
+            shadeClose: true,
+            content: $('#list').html()
+        });
+    });
+
+   $('.explain1').on('click', function(){
+       layer.open({
+           type: 1,
+           title: false,
+           closeBtn: 1,
+           area: ['80%', 'auto'],
+           shadeClose: true,
+           content: $('#single').html()
+       });
+   });
+
+    function closeLayer() {
+        layer.close(layer.index);
+    }
+</script>
+
+
+</html>
