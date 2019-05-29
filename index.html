@@ -1,0 +1,235 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "
+http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+
+    <!--H5页面窗口自动调整到设备宽度，并禁止用户缩放页面-->
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, userscalable=no"/>
+
+    <!--当网站添加到主屏幕快速启动方式，可隐藏地址栏，仅针对ios的safari-->
+    <meta content="yes" name="apple-mobile-web-app-capable">
+
+    <!--将网站添加到主屏幕快速启动方式，仅针对ios的safari顶端状态条的样式-->
+    <meta content="black" name="apple-mobile-web-app-status-bar-style">
+
+    <!--忽略将页面中的数字识别为电话号码-->
+    <meta content="telephone=no" name="format-detection">
+
+    <!--忽略Android平台中对邮箱地址的识别-->
+    <meta content="email=no" name="format-detection">
+    <title>中国电信广东公司</title>
+    <link rel="stylesheet" type="text/css" href="css/css.css">
+    <link rel="stylesheet" href="css/swiper.min.css">
+
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <script src="js/swiper.min.js"></script>
+    <script type="text/javascript" src="js/js.js"></script>
+    <link rel="stylesheet" href="css/index2.css">
+
+
+    <!--弹窗js-->
+    <script src="js/jquery-1.12.0.min.js"></script>
+    <script src="js/layer/layer.js"></script>
+
+    <!--新增点击复制js-->
+    <script src="//code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script>
+        function copyToClipboard() {
+            var Url2 = document.getElementById("input");
+            Url2.select(); // 选择对象
+            document.execCommand("Copy"); // 执行浏览器复制命令
+            layer.msg("已复制好，可贴粘。");
+        }
+    </script>
+    <style>
+        .ad {
+            line-height: 2rem;
+            padding: 0 15px;
+            /*background: #8acc4c;*/
+            background: rgba(255, 255, 255 ,0.6);
+            font-size: 15px;
+            color: #4c801a;
+            width: 90%;
+            margin: 0 5%;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px #75b23b;
+        }
+        .ad span{
+            /*box-shadow: 0 1px 0 #ffffff;*/
+        }
+        .ad img{
+            width: 16px;
+            margin-bottom: -3px;
+        }
+        img { pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="night">
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+    <div class="shooting_star"></div>
+</div>
+
+
+
+<div style="background: #8acc4c;padding-top: 15px">
+    <p class="ad">
+        <img src="./images/noti.gif" alt="">
+        <span>• 优惠信息 •</span>
+
+        <span>  &nbsp;  充100返200</span>
+    </p>
+    <img src="./images/banner.png" alt="" style="width: 100%;margin-top: 5px">
+</div>
+<div class="div_ul div_listUl">
+    <div class="box_title">
+        <label for="change1" class="radiostyle1 background">
+            <input type="radio" name="change" id="change1" checked>
+            <span>充值ㅣ缴账单费用</span><br>
+            <p class="reddot1"></p>
+        </label>
+
+        <label for="change2" class="radiostyle2">
+            <input type="radio" name="change" id="change2">
+            <span>缴订单费用</span>
+            <p class="reddot2"></p>
+        </label>
+    </div>
+    <div class="swiper-container2" style="margin-top: 0px;">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide">
+                <div style="padding: 30px 0;border-top: 1px #8acc4c solid">
+                    <div class="contain">
+                        <input type="tel" placeholder="手机号码 / 区号固话 / 宽带账号" id="input">
+                        <p>手机</p>
+                    </div>
+                    <select>
+                        <option value="0" selected disabled>请选择地市</option>
+                        <option value="1">广州</option>
+                        <option value="2">深圳</option>
+                    </select>
+
+                    <p class="forget">
+                        <a href="">忘记IPTV账号</a>
+                        <a href="">忘记宽带账号</a>
+                    </p>
+                    <button class="change" id="button">下一步</button>
+                    <br>
+                    <a href="" class="record">互联网卡充值优惠>></a>
+                </div>
+
+                <div class="notification">
+                    <span class="line"></span>
+                    <span class="dot"></span>
+                    <span style="font-size: 16px;margin: 0 4%;">温馨提醒</span>
+                    <span class="dot"></span>
+                    <span class="line"></span>
+                    <p class="text">宽带、电信电视（IPTV）需使用上网帐号充值缴费</p>
+                </div>
+            </div>
+
+
+            <div class="swiper-slide" style="">
+                <div style="padding: 30px 0;border-top: 1px #8acc4c solid">
+                    <select name="" id="select" class="type">
+                        <option value="0" selected disabled>号码类型</option>
+                        <option value="1">手机</option>
+                        <option value="2">身份证</option>
+                        <option value="1">IPTV账号</option>
+                        <option value="2">护照</option>
+                        <option value="1">户口本</option>
+                        <option value="17">港澳居民来往内地通行证</option>
+                        <option value="42">台湾居民来往内地通行证</option>
+                        <option value="06">工商执照</option>
+                        <option value="14">中华人民共和国组织机构代码证</option>
+                    </select>
+                    <div class="contain">
+                        <input type="tel" placeholder="请输入对应号码">
+                        <!--<p>宽带</p>-->
+                    </div>
+                    <select name="" id="">
+                        <option value="0" selected disabled>请选择地市</option>
+                        <option value="1">广州</option>
+                        <option value="2">深圳</option>
+                    </select>
+
+                    <button class="change">下一步</button>
+                    <a href="" class="record">充缴记录>></a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!--跳转提示弹窗-->
+<div id="transition" style="display: none;">
+    <div style="padding: 40px 15px">
+        <img src="./images/transition.png" alt="" style="width: 72px">
+        <p style="color: #999999;line-height: 32px;font-size: 15px">现在为您跳转充值页面，点击</p>
+        <button onclick="copyToClipboard() " class="btn1">复制号码充值</button>
+    </div>
+</div>
+</body>
+<!-- Initialize Swiper -->
+<script>
+    var change1 = document.getElementById('change1');
+    var change2 = document.getElementById('change2');
+    var swiper2 = new Swiper('.swiper-container2', {
+        // autoplay: true,
+        autoHeight: true,
+        on: {
+            slideChange: function () {
+                $('.div_listUl .box_title label').eq(this.activeIndex).addClass('background').siblings().removeClass('background');
+
+                $(":radio[name=change]:not(:checked)").prop("checked", true);
+
+            },
+        },
+    });
+
+    $("select").on('change', function () {
+        if ($(this).val() !== "0") {
+            $(this).addClass("selectColor")
+        } else {
+            $(this).removeClass("selectColor");
+        }
+    })
+
+
+    $('#button').on('click', function () {
+        layer.open({
+            type: 1,
+            title: false,
+            closeBtn: 1,
+            area: ['80%', 'auto'],
+            shadeClose: true,
+            content: $('#transition').html()
+        });
+    });
+
+    function closeLayer() {
+        layer.close(layer.index);
+    }
+
+
+</script>
+</body>
+</html>
