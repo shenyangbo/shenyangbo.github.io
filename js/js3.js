@@ -1,19 +1,4 @@
 $(document).ready(function() {
-	
-	// 大模型生成中
-	$('.bottom_presuppose p').addClass('bottom_presuppose_disabled') //禁止点击
-	$('#userInput').attr('disabled','disabled');
-	$('.input_content').css('background','#f4f6f9')
-	
-	
-	// 大模型生成完成
-	$('.bottom_presuppose p').removeClass('bottom_presuppose_disabled') //移除禁止点击
-	$('#userInput').attr('disabled',false);
-	$('.input_content').css('background','#ffffff')
-	
-	$('.bottom_presuppose p').click(function(){
-		console.log(12)
-	})
 	// $(document).on('click', '.div_listUl .box_title  label', function() {
 	// 	var i = $(this).index();
 	// 	$(this).addClass('background').siblings().removeClass('background');
@@ -296,47 +281,6 @@ $(document).ready(function() {
 		var i = $(this).index();
 		$(this).addClass('active').siblings().removeClass('active');
 	});
-	
-	
-	// 反馈
-	$(document).on('click', '.feedback_content_details> p > span', function() {
-		var i = $(this).index();
-		$('.feedback_content_details> p > span').removeClass('feedback_active');
-		$(this).addClass('feedback_active');
-		$('.feedback_textarea').hide();
-		$('.button_large').attr('disabled',false)
-	});
-	
-	$(document).on('click', '.feedback_other', function() {
-		$('.feedback_textarea').show();
-	});
-	$(document).on('click', '.button_large', function() {
-		$('.feedback').hide();
-		const toast = document.getElementById("toast");
-		toast.innerText ='提交成功';
-		toast.style.display = 'block';
-		$('.praise').off('click');
-		
-		$('.poorly').off('click'); //提交后不能再点踩
-		$('#content').val(''); //清空内容
-		$('#numCount').text('0'); //数字清零
-		
-		setTimeout(() => {
-			toast.style.display = 'none';
-		}, 1000);
-	});
-	$('.poorly').on('click', function(){
-		$(this).attr('src','image/poorly_blue.png');
-		$('.feedback').show();
-		// $('.praise').off('click')
-		
-	});
-	$('.praise').on('click', function(){
-		$(this).attr('src','image/praise_blue.png');
-		$(this).siblings('.poorly').attr('src','image/poorly_grey.png')
-		$('.poorly').off('click')
-	})
-	
 
 
 
@@ -721,8 +665,7 @@ $(document).ready(function() {
 		$('.loading_container').css('display', 'flex');
 		animateProgress();
 	});
-	
-	
+
 // =============== 全局变量 ===============
 var bt_recoding = document.getElementById("bt_recoding");
 var blackBoxSpeak = document.querySelector(".blackBoxSpeak");
@@ -731,378 +674,320 @@ const toast = document.getElementById("toast");
 
 let audioContext = null;
 let mediaStreamSource = null;
-let scriptProcessorNode = null;
+let audioWorkletNode = null; // 替换 ScriptProcessorNode 为 AudioWorkletNode
 let mergedBuffer = new Float32Array(0);
 let bufferLength = 0;
 let currentStream = null;
 let isRecording = false;
-let posStart = 0;
+let posStart = 0; // 你的代码中未使用的变量，保留
 let audioContextReady = false;
 let isFirstTime = true;
-let permissionGranted = false; // 权限状态标记
-let hasPermissionBeenDenied = false; // 新增：标记权限是否曾被拒绝
+let permissionGranted = false; // 新增：权限状态标记
 
 function showToast(message) {
-	toast.innerText = message;
-	toast.style.display = 'block';
-	setTimeout(() => {
-		toast.style.display = 'none';
-	}, 1000);
+    toast.innerText = message;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 1000);
 }
-
-// 辅助函数，确保存在
-function initStatus() {
-    bt_recoding.value = '按住说话';
-    showBlackBoxNone();
-}
-
-function showBlackBoxNone() {
-    blackBoxSpeak.style.display = "none";
-    blackBoxPause.style.display = "none";
-}
-
-function updateBase64Output(base64) {
-    const base64Output = document.getElementById('base64Output');
-    if (base64Output) {
-        base64Output.innerHTML = `<pre>${base64}</pre>`;
-    }
-
-    const audioContainer = document.getElementById('audioContainer');
-    if (audioContainer) {
-        const audioElement = document.createElement('audio');
-        audioElement.controls = true;
-        audioElement.src = `data:audio/wav;base64,${base64}`;
-
-        audioContainer.innerHTML = '';
-        audioContainer.appendChild(audioElement);
-    }
-
-    console.log(base64);
-}
-
-// 微信浏览器兼容：修复 navigator.mediaDevices 不存在
-if (!navigator.mediaDevices && navigator.webkitGetUserMedia) {
-  navigator.mediaDevices = {
-    getUserMedia: function(constraints) {
-      return new Promise((resolve, reject) => {
-        navigator.webkitGetUserMedia.call(navigator, constraints, resolve, reject);
-      });
-    }
-  };
-}
-
 
 function createAudioContextSync() {
-	try {
-		if (!audioContext || audioContext.state === 'closed') {
-			audioContext = new(window.AudioContext || window.webkitAudioContext)({
-				sampleRate: 8000
-			});
-			console.log("AudioContext创建成功，采样率:", audioContext.sampleRate);
-		}
+    try {
+        if (!audioContext || audioContext.state === 'closed') {
+            audioContext = new(window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 8000
+            });
+            console.log("AudioContext创建成功，采样率:", audioContext.sampleRate);
+        }
 
-		// 立即尝试激活（对iOS很重要）
-		if (audioContext.state === 'suspended') {
-			console.log("AudioContext状态为suspended，尝试激活...");
-			return audioContext.resume().then(() => {
-				console.log("AudioContext激活成功");
-				audioContextReady = true;
-				return true;
-			});
-		} else {
-			console.log("AudioContext状态:", audioContext.state);
-			audioContextReady = true;
-			return Promise.resolve(true);
-		}
-	} catch (err) {
-		console.error("创建AudioContext失败:", err);
-		audioContextReady = false;
-		return Promise.reject(err);
-	}
+        // 立即尝试激活（对iOS很重要）
+        if (audioContext.state === 'suspended') {
+            console.log("AudioContext状态为suspended，尝试激活...");
+            return audioContext.resume().then(() => {
+                console.log("AudioContext激活成功");
+                audioContextReady = true;
+                return true;
+            });
+        } else {
+            console.log("AudioContext状态:", audioContext.state);
+            audioContextReady = true;
+            return Promise.resolve(true);
+        }
+    } catch (err) {
+        console.error("创建AudioContext失败:", err);
+        audioContextReady = false;
+        return Promise.reject(err);
+    }
 }
 
 async function preRequestPermission() {
-  try {
-    const getUserMedia = 
-      navigator.mediaDevices?.getUserMedia ||
-      navigator.webkitGetUserMedia;
+    try {
+        // 在用户手势中预请求权限但立即关闭流
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            }
+        });
 
-    if (!getUserMedia) return false;
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
-    stream.getTracks().forEach(track => track.stop());
-    console.log("预权限成功");
-    return true;
-  } catch (err) {
-    console.error("预权限失败:", err);
-    return false;
-  }
+        // 立即停止所有轨道
+        stream.getTracks().forEach(track => track.stop());
+        console.log("预权限请求成功");
+        return true;
+    } catch (err) {
+        console.error("预权限请求失败:", err);
+        return false;
+    }
 }
 
 async function startRecording() {
-	if (isRecording) return;
+    if (isRecording) return;
 
-	// 1. 检查权限状态
-	// 这个检查是最终的防线，如果到这里权限仍未被授予
-	if (!permissionGranted) {
-		if (!hasPermissionBeenDenied) { // 权限从未被请求或从未拒绝
-			showToast("请先点击获取麦克风权限");
-		} else { // 权限曾被拒绝
-			showToast("麦克风权限已被拒绝，请刷新页面重试。");
-		}
-		initStatus();
-		showBlackBoxNone();
-		return;
-	}
+    // 检查权限状态
+    if (!permissionGranted) {
+        showToast("请先点击获取麦克风权限");
+        // 假设 initStatus 和 showBlackBoxNone 在你的实际代码中已定义
+        // initStatus();
+        // showBlackBoxNone();
+        return;
+    }
 
-	// 2. 如果权限已授予，则直接启动录音
-	try {
-		console.log("开始录音流程...");
+    try {
+        console.log("开始录音流程...");
 
-		await createAudioContextSync();
+        await createAudioContextSync();
 
-		if (!audioContextReady) {
-			throw new Error("AudioContext未准备就绪");
-		}
+        if (!audioContextReady) {
+            throw new Error("AudioContext未准备就绪");
+        }
 
-		// 不再在此处请求麦克风权限，因为前面已经确保 permissionGranted 为 true
-		console.log("使用已获取的麦克风权限...");
-		const stream = await navigator.mediaDevices.getUserMedia({
-			audio: {
-				echoCancellation: false,
-				noiseSuppression: false,
-				autoGainControl: false
-			}
-		});
+        // 加载 AudioWorklet 模块。**这必须在 AudioWorkletNode 实例化之前完成**
+        console.log("加载 AudioWorklet 模块...");
+        await audioContext.audioWorklet.addModule('recorder-processor.js'); // 确保路径正确
 
-		if (currentStream) {
-			currentStream.getTracks().forEach(track => track.stop());
-		}
-		currentStream = stream;
+        console.log("请求麦克风权限...");
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            }
+        });
 
-		mediaStreamSource = audioContext.createMediaStreamSource(stream);
-		scriptProcessorNode = audioContext.createScriptProcessor(1024, 1, 1);
-		scriptProcessorNode.onaudioprocess = onAudioProcess;
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        currentStream = stream;
 
-		mediaStreamSource.connect(scriptProcessorNode);
-		scriptProcessorNode.connect(audioContext.destination);
+        mediaStreamSource = audioContext.createMediaStreamSource(stream);
 
-		isRecording = true;
-		isFirstTime = false; // 成功启动录音，标记不再是首次
-		console.log("录音启动成功");
+        // 创建 AudioWorkletNode 实例
+        audioWorkletNode = new AudioWorkletNode(audioContext, 'recorder-processor');
 
-	} catch (err) {
-		console.error('录音启动失败:', err);
-		// 这里的错误通常是因为麦克风设备问题，而不是权限问题（因为权限已在前置函数中处理）
-		if (err.name === 'NotFoundError') {
-			alert('未找到麦克风设备');
-		} else if (err.message.includes('AudioContext')) {
-			alert('音频系统初始化失败，请重试');
-		} else {
-			alert(`录音失败: ${err.message}`);
-		}
+        // 设置 AudioWorkletNode 的消息监听器，接收来自处理器的音频数据
+        audioWorkletNode.port.onmessage = (event) => {
+            if (!isRecording) return; // 确保只在录音时处理
 
-		// 重置状态
-		initStatus();
-		showBlackBoxNone();
-		audioContextReady = false;
-	}
+            const inputBuffer = event.data; // 从 AudioWorklet 处理器接收到的音频数据
+            const newBuffer = new Float32Array(bufferLength + inputBuffer.length);
+            newBuffer.set(mergedBuffer);
+            newBuffer.set(inputBuffer, bufferLength);
+            mergedBuffer = newBuffer;
+            bufferLength += inputBuffer.length;
+        };
+
+        // 连接音频图
+        mediaStreamSource.connect(audioWorkletNode);
+        // 连接到 destination 以便进行监听（如果需要）或保持节点活跃
+        audioWorkletNode.connect(audioContext.destination);
+
+        isRecording = true;
+        isFirstTime = false;
+        console.log("录音启动成功");
+
+    } catch (err) {
+        console.error('录音启动失败:', err);
+        if (err.name === 'NotAllowedError') {
+            alert('请允许访问麦克风权限');
+            permissionGranted = false; // 重置权限状态
+        } else if (err.name === 'NotFoundError') {
+            alert('未找到麦克风设备');
+        } else if (err.message.includes('AudioContext')) {
+            alert('音频系统初始化失败，请重试');
+        } else {
+            alert(`录音失败: ${err.message}`);
+        }
+
+        // 重置状态
+        // initStatus(); // 假设此函数在你的代码中已定义
+        // showBlackBoxNone(); // 假设此函数在你的代码中已定义
+        audioContextReady = false;
+    }
 }
 
-// =============== 音频处理 ===============
-function onAudioProcess(event) {
-	if (!isRecording) return;
-
-	const inputBuffer = event.inputBuffer.getChannelData(0);
-	const newBuffer = new Float32Array(bufferLength + inputBuffer.length);
-	newBuffer.set(mergedBuffer);
-	newBuffer.set(inputBuffer, bufferLength);
-	mergedBuffer = newBuffer;
-	bufferLength += inputBuffer.length;
-}
+// onAudioProcess 函数不再需要，其逻辑已移至 audioWorkletNode.port.onmessage
+// function onAudioProcess(event) { ... }
 
 function stopRecording() {
-	if (!isRecording) return;
-	isRecording = false;
+    if (!isRecording) return;
+    isRecording = false;
 
-	if (scriptProcessorNode) {
-		scriptProcessorNode.disconnect();
-		scriptProcessorNode = null;
-	}
-	if (mediaStreamSource) {
-		mediaStreamSource.disconnect();
-		mediaStreamSource = null;
-	}
-	if (currentStream) {
-		currentStream.getTracks().forEach(track => track.stop());
-		currentStream = null;
-	}
+    // 断开 AudioWorkletNode
+    if (audioWorkletNode) {
+        audioWorkletNode.disconnect();
+        audioWorkletNode = null;
+    }
+    if (mediaStreamSource) {
+        mediaStreamSource.disconnect();
+        mediaStreamSource = null;
+    }
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
 
-	processAudioData();
+    processAudioData();
 }
 
-// 完整的encodeWAV函数
+// 完整的encodeWAV函数 (保持不变)
 function encodeWAV(samples, sampleRate) {
-	const buffer = new ArrayBuffer(44 + samples.length * 2);
-	const view = new DataView(buffer);
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
 
-	// WAV文件头
-	const writeString = (offset, string) => {
-		for (let i = 0; i < string.length; i++) {
-			view.setUint8(offset + i, string.charCodeAt(i));
-		}
-	};
+    // WAV文件头
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
 
-	writeString(0, 'RIFF');
-	view.setUint32(4, 36 + samples.length * 2, true);
-	writeString(8, 'WAVE');
-	writeString(12, 'fmt ');
-	view.setUint32(16, 16, true);
-	view.setUint16(20, 1, true);
-	view.setUint16(22, 1, true);
-	view.setUint32(24, sampleRate, true);
-	view.setUint32(28, sampleRate * 2, true);
-	view.setUint16(32, 2, true);
-	view.setUint16(34, 16, true);
-	writeString(36, 'data');
-	view.setUint32(40, samples.length * 2, true);
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
 
-	// 转换为16位PCM
-	let offset = 44;
-	for (let i = 0; i < samples.length; i++, offset += 2) {
-		const s = Math.max(-1, Math.min(1, samples[i]));
-		view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-	}
+    // 转换为16位PCM
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
 
-	return new Blob([view], { type: 'audio/wav' });
+    return new Blob([view], { type: 'audio/wav' });
 }
 
 function processAudioData() {
-	if (bufferLength === 0) return;
+    if (bufferLength === 0) return;
 
-	const wavBlob = encodeWAV(mergedBuffer, 8000);
-	const reader = new FileReader();
-	reader.onloadend = () => {
-		const base64String = reader.result.split(',')[1];
-		updateBase64Output(base64String);
-	};
-	reader.readAsDataURL(wavBlob);
+    // 确保 audioContext 存在且已就绪
+    const currentSampleRate = audioContext && audioContext.sampleRate ? audioContext.sampleRate : 8000;
+    const wavBlob = encodeWAV(mergedBuffer, currentSampleRate);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        const base64String = reader.result.split(',')[1];
+        updateBase64Output(base64String);
+    };
+    reader.readAsDataURL(wavBlob);
 
-	mergedBuffer = new Float32Array(0);
-	bufferLength = 0;
+    mergedBuffer = new Float32Array(0);
+    bufferLength = 0;
 }
 
 async function handleFirstTimeInit() {
-	if (!isFirstTime) return true;
+    if (!isFirstTime) return true;
 
-	try {
-		console.log("iOS首次初始化处理...");
+    try {
+        console.log("iOS首次初始化处理...");
 
-		// 在用户手势中预创建AudioContext
-		await createAudioContextSync();
+        // 在用户手势中预创建AudioContext
+        await createAudioContextSync();
 
-		// 预请求权限（可选，某些情况下有助于iOS）
-		// 这里保留 preRequestPermission 的调用，是为了 iOS 兼容性。
-		// 但我们会通过 isFirstTime 和 hasPermissionBeenDenied 确保它不会在权限被拒后重复执行
-		await preRequestPermission();
+        // 预加载 AudioWorklet 模块
+        await audioContext.audioWorklet.addModule('recorder-processor.js');
 
-		console.log("首次初始化完成");
-		return true;
-	} catch (err) {
-		console.error("首次初始化失败:", err);
-		return false;
-	}
+        // 预请求权限（可选，某些情况下有助于iOS）
+        await preRequestPermission();
+
+        console.log("首次初始化完成");
+        return true;
+    } catch (err) {
+        console.error("首次初始化失败:", err);
+        return false;
+    }
 }
 
-// 修改权限请求函数，只请求权限，不录音
+// 修改权限请求函数，添加权限状态管理
 async function requestMicrophonePermission() {
-  try {
-    await createAudioContextSync();
+    try {
+        // 先初始化AudioContext（对iOS重要）
+        await createAudioContextSync();
 
-    // 兼容老写法
-    const getUserMedia = 
-      navigator.mediaDevices?.getUserMedia ||
-      navigator.webkitGetUserMedia ||
-      navigator.mozGetUserMedia;
+        // 预加载 AudioWorklet 模块，确保在后续使用前已加载
+        await audioContext.audioWorklet.addModule('recorder-processor.js');
 
-    if (!getUserMedia) {
-      alert("当前浏览器不支持录音");
-      return;
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            }
+        });
+        console.log("麦克风权限已授予");
+
+        // 如果只是为了请求权限，不需要实际使用流，这里立即停止所有轨道
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            console.log("音频轨道已停止");
+        }
+
+        permissionGranted = true; // 设置权限已获取
+        showToast("麦克风权限已获取，可以开始录音");
+
+        isFirstTime = false; // 标记已经成功请求过一次权限
+    } catch (err) {
+        console.error("请求麦克风权限失败:", err);
+        permissionGranted = false; // 权限获取失败
+        if (err.name === 'NotAllowedError') {
+            alert('请允许访问麦克风权限');
+        } else {
+            alert(`请求麦克风权限时发生错误: ${err.message}`);
+        }
     }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false
-      }
-    });
-
-    stream.getTracks().forEach(track => track.stop());
-    permissionGranted = true;
-    hasPermissionBeenDenied = false;
-    showToast("麦克风权限已获取，可以开始录音");
-    isFirstTime = false;
-
-  } catch (err) {
-    console.error("权限失败:", err);
-    permissionGranted = false;
-    if (err.name === 'NotAllowedError') {
-      hasPermissionBeenDenied = true;
-      alert('您已拒绝麦克风权限，请刷新页面重试。');
-    } else {
-      alert(`麦克风异常：${err.message || '不支持录音'}`);
-    }
-  }
 }
 
+
+// 事件监听器保持不变
 $('.input_voice_switch').click(function() {
-	requestMicrophonePermission();
+    requestMicrophonePermission();
 });
 
-// ---
 function initEvent() {
-	// 触摸事件（移动端）
 	bt_recoding.addEventListener("touchstart", async function(event) {
 		event.preventDefault();
 		posStart = event.touches[0].pageY;
 
 		showBlackBoxSpeak();
-		
-		//  新增：触发手机短震动
-			if (navigator.vibrate) {
-				navigator.vibrate(100); // 单次震动100毫秒
-			}
 
-		// 核心修改点：在任何操作之前，检查是否曾被拒绝
-		if (hasPermissionBeenDenied) {
-			showToast("麦克风权限已被拒绝，请刷新页面重试。");
-			initStatus();
-			showBlackBoxNone();
-			return; // 阻止后续一切操作
-		}
-
-		// iOS首次处理（只有在没有被拒绝过的情况下才执行）
 		if (isFirstTime) {
 			const initSuccess = await handleFirstTimeInit();
 			if (!initSuccess) {
-				// handleFirstTimeInit 失败通常意味着 preRequestPermission 失败
-				// 如果 preRequestPermission 失败是 NotAllowedError，hasPermissionBeenDenied 会被设置
-				// 此时也应该给出刷新页面的提示
-				if (hasPermissionBeenDenied) {
-					showToast("麦克风权限已被拒绝，请刷新页面重试。");
-				} else {
-					showToast("初始化失败，请重试。"); // 其他类型的初始化失败
-				}
 				initStatus();
 				showBlackBoxNone();
 				return;
 			}
 		}
 
-		// 开始录音（它会自己检查 permissionGranted）
 		await startRecording();
 	});
 
@@ -1132,38 +1017,18 @@ function initEvent() {
 			showToast("取消发送");
 			$('#bt_recoding').css('color', '#333333');
 			$('#bt_recoding').css('background', 'white');
-
 			clearRecording();
 			clearBase64Output();
 			showBlackBoxNone();
 		}
 	});
 
-	// 鼠标事件（桌面测试）
 	bt_recoding.addEventListener("mousedown", async function(event) {
 		event.preventDefault();
 		showBlackBoxSpeak();
 
-		// 核心修改点：在任何操作之前，检查是否曾被拒绝
-		if (hasPermissionBeenDenied) {
-			showToast("麦克风权限已被拒绝，请刷新页面重试。");
-			initStatus();
-			showBlackBoxNone();
-			return; // 阻止后续一切操作
-		}
-
 		if (isFirstTime) {
-			const initSuccess = await handleFirstTimeInit();
-			if (!initSuccess) {
-				if (hasPermissionBeenDenied) {
-					showToast("麦克风权限已被拒绝，请刷新页面重试。");
-				} else {
-					showToast("初始化失败，请重试。");
-				}
-				initStatus();
-				showBlackBoxNone();
-				return;
-			}
+			await handleFirstTimeInit();
 		}
 
 		await startRecording();
@@ -1179,39 +1044,35 @@ function initEvent() {
 	});
 }
 
-window.addEventListener('load', function() {
-	// 初始化事件监听
-	initEvent();
+var initStatus = function () {
+	bt_recoding.value = '按住说话';
+	showBlackBoxNone();
+}
 
-	console.log("录音组件初始化完成");
-});
-
-// =============== 其他辅助函数 ===============
-var showBlackBoxSpeak = function() {
+var showBlackBoxSpeak = function () {
 	bt_recoding.value = '松开结束';
 	blackBoxSpeak.style.display = "block";
 	blackBoxPause.style.display = "none";
-
 	$('#bt_recoding').css('background', '#3473F4');
 	$('#bt_recoding').css('color', '#ffffff');
 }
 
-var showBlackBoxPause = function() {
+var showBlackBoxPause = function () {
 	bt_recoding.value = '松开手指，取消发送';
 	blackBoxSpeak.style.display = "none";
 	blackBoxPause.style.display = "block";
-
 	$('#bt_recoding').css('background', 'red');
 }
 
-var showBlackBoxNone = function() {
+var showBlackBoxNone = function () {
 	blackBoxSpeak.style.display = "none";
 	blackBoxPause.style.display = "none";
 }
 
 function clearRecording() {
-	mergedBuffer = new Float32Array(0);
-	bufferLength = 0;
+	if (ringBuffer) {
+		ringBuffer.clear();
+	}
 }
 
 function clearBase64Output() {
@@ -1221,6 +1082,29 @@ function clearBase64Output() {
 	}
 }
 
+function updateBase64Output(base64) {
+	const base64Output = document.getElementById('base64Output');
+	if (base64Output) {
+		base64Output.innerHTML = `<pre>${base64}</pre>`;
+	}
+
+	const audioContainer = document.getElementById('audioContainer');
+	if (audioContainer) {
+		const audioElement = document.createElement('audio');
+		audioElement.controls = true;
+		audioElement.src = `data:audio/wav;base64,${base64}`;
+
+		audioContainer.innerHTML = '';
+		audioContainer.appendChild(audioElement);
+	}
+
+	console.log(base64);
+}
+
+window.addEventListener('load', function () {
+	initEvent();
+	console.log("录音组件初始化完成");
+});
 
 
 	// 新消息提醒

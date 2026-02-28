@@ -1,19 +1,4 @@
 $(document).ready(function() {
-	
-	// 大模型生成中
-	$('.bottom_presuppose p').addClass('bottom_presuppose_disabled') //禁止点击
-	$('#userInput').attr('disabled','disabled');
-	$('.input_content').css('background','#f4f6f9')
-	
-	
-	// 大模型生成完成
-	$('.bottom_presuppose p').removeClass('bottom_presuppose_disabled') //移除禁止点击
-	$('#userInput').attr('disabled',false);
-	$('.input_content').css('background','#ffffff')
-	
-	$('.bottom_presuppose p').click(function(){
-		console.log(12)
-	})
 	// $(document).on('click', '.div_listUl .box_title  label', function() {
 	// 	var i = $(this).index();
 	// 	$(this).addClass('background').siblings().removeClass('background');
@@ -296,47 +281,6 @@ $(document).ready(function() {
 		var i = $(this).index();
 		$(this).addClass('active').siblings().removeClass('active');
 	});
-	
-	
-	// 反馈
-	$(document).on('click', '.feedback_content_details> p > span', function() {
-		var i = $(this).index();
-		$('.feedback_content_details> p > span').removeClass('feedback_active');
-		$(this).addClass('feedback_active');
-		$('.feedback_textarea').hide();
-		$('.button_large').attr('disabled',false)
-	});
-	
-	$(document).on('click', '.feedback_other', function() {
-		$('.feedback_textarea').show();
-	});
-	$(document).on('click', '.button_large', function() {
-		$('.feedback').hide();
-		const toast = document.getElementById("toast");
-		toast.innerText ='提交成功';
-		toast.style.display = 'block';
-		$('.praise').off('click');
-		
-		$('.poorly').off('click'); //提交后不能再点踩
-		$('#content').val(''); //清空内容
-		$('#numCount').text('0'); //数字清零
-		
-		setTimeout(() => {
-			toast.style.display = 'none';
-		}, 1000);
-	});
-	$('.poorly').on('click', function(){
-		$(this).attr('src','image/poorly_blue.png');
-		$('.feedback').show();
-		// $('.praise').off('click')
-		
-	});
-	$('.praise').on('click', function(){
-		$(this).attr('src','image/praise_blue.png');
-		$(this).siblings('.poorly').attr('src','image/poorly_grey.png')
-		$('.poorly').off('click')
-	})
-	
 
 
 
@@ -721,8 +665,7 @@ $(document).ready(function() {
 		$('.loading_container').css('display', 'flex');
 		animateProgress();
 	});
-	
-	
+
 // =============== 全局变量 ===============
 var bt_recoding = document.getElementById("bt_recoding");
 var blackBoxSpeak = document.querySelector(".blackBoxSpeak");
@@ -748,47 +691,6 @@ function showToast(message) {
 	setTimeout(() => {
 		toast.style.display = 'none';
 	}, 1000);
-}
-
-// 辅助函数，确保存在
-function initStatus() {
-    bt_recoding.value = '按住说话';
-    showBlackBoxNone();
-}
-
-function showBlackBoxNone() {
-    blackBoxSpeak.style.display = "none";
-    blackBoxPause.style.display = "none";
-}
-
-function updateBase64Output(base64) {
-    const base64Output = document.getElementById('base64Output');
-    if (base64Output) {
-        base64Output.innerHTML = `<pre>${base64}</pre>`;
-    }
-
-    const audioContainer = document.getElementById('audioContainer');
-    if (audioContainer) {
-        const audioElement = document.createElement('audio');
-        audioElement.controls = true;
-        audioElement.src = `data:audio/wav;base64,${base64}`;
-
-        audioContainer.innerHTML = '';
-        audioContainer.appendChild(audioElement);
-    }
-
-    console.log(base64);
-}
-
-// 微信浏览器兼容：修复 navigator.mediaDevices 不存在
-if (!navigator.mediaDevices && navigator.webkitGetUserMedia) {
-  navigator.mediaDevices = {
-    getUserMedia: function(constraints) {
-      return new Promise((resolve, reject) => {
-        navigator.webkitGetUserMedia.call(navigator, constraints, resolve, reject);
-      });
-    }
-  };
 }
 
 
@@ -822,34 +724,37 @@ function createAudioContextSync() {
 }
 
 async function preRequestPermission() {
-  try {
-    const getUserMedia = 
-      navigator.mediaDevices?.getUserMedia ||
-      navigator.webkitGetUserMedia;
+	try {
+		// 在用户手势中预请求权限但立即关闭流
+		const stream = await navigator.mediaDevices.getUserMedia({
+			audio: {
+				echoCancellation: false,
+				noiseSuppression: false,
+				autoGainControl: false
+			}
+		});
 
-    if (!getUserMedia) return false;
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
-    stream.getTracks().forEach(track => track.stop());
-    console.log("预权限成功");
-    return true;
-  } catch (err) {
-    console.error("预权限失败:", err);
-    return false;
-  }
+		// 立即停止所有轨道
+		stream.getTracks().forEach(track => track.stop());
+		console.log("预权限请求成功");
+		return true;
+	} catch (err) {
+		console.error("预权限请求失败:", err);
+		return false;
+	}
 }
 
 async function startRecording() {
 	if (isRecording) return;
 
 	// 1. 检查权限状态
-	// 这个检查是最终的防线，如果到这里权限仍未被授予
 	if (!permissionGranted) {
-		if (!hasPermissionBeenDenied) { // 权限从未被请求或从未拒绝
+		// 如果权限从未被授予过
+		if (!hasPermissionBeenDenied) {
+			// 如果从未拒绝过，则提示用户先获取权限
 			showToast("请先点击获取麦克风权限");
-		} else { // 权限曾被拒绝
+		} else {
+			// 如果曾经拒绝过，则提示刷新页面
 			showToast("麦克风权限已被拒绝，请刷新页面重试。");
 		}
 		initStatus();
@@ -867,7 +772,7 @@ async function startRecording() {
 			throw new Error("AudioContext未准备就绪");
 		}
 
-		// 不再在此处请求麦克风权限，因为前面已经确保 permissionGranted 为 true
+		// 不再在此处请求麦克风权限
 		console.log("使用已获取的麦克风权限...");
 		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: {
@@ -890,7 +795,7 @@ async function startRecording() {
 		scriptProcessorNode.connect(audioContext.destination);
 
 		isRecording = true;
-		isFirstTime = false; // 成功启动录音，标记不再是首次
+		isFirstTime = false;
 		console.log("录音启动成功");
 
 	} catch (err) {
@@ -1004,8 +909,6 @@ async function handleFirstTimeInit() {
 		await createAudioContextSync();
 
 		// 预请求权限（可选，某些情况下有助于iOS）
-		// 这里保留 preRequestPermission 的调用，是为了 iOS 兼容性。
-		// 但我们会通过 isFirstTime 和 hasPermissionBeenDenied 确保它不会在权限被拒后重复执行
 		await preRequestPermission();
 
 		console.log("首次初始化完成");
@@ -1018,91 +921,75 @@ async function handleFirstTimeInit() {
 
 // 修改权限请求函数，只请求权限，不录音
 async function requestMicrophonePermission() {
-  try {
-    await createAudioContextSync();
+	try {
+		// 先初始化AudioContext（对iOS重要）
+		await createAudioContextSync();
 
-    // 兼容老写法
-    const getUserMedia = 
-      navigator.mediaDevices?.getUserMedia ||
-      navigator.webkitGetUserMedia ||
-      navigator.mozGetUserMedia;
+		const stream = await navigator.mediaDevices.getUserMedia({
+			audio: {
+				echoCancellation: false,
+				noiseSuppression: false,
+				autoGainControl: false
+			}
+		});
+		console.log("麦克风权限已授予");
 
-    if (!getUserMedia) {
-      alert("当前浏览器不支持录音");
-      return;
-    }
+		// 如果只是为了请求权限，不需要实际使用流，这里立即停止所有轨道
+		if (stream) {
+			stream.getTracks().forEach(track => track.stop());
+			console.log("音频轨道已停止");
+		}
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false
-      }
-    });
+		permissionGranted = true; // 设置权限已获取
+		hasPermissionBeenDenied = false; // 如果重新获得权限，重置拒绝标记
+		showToast("麦克风权限已获取，可以开始录音");
 
-    stream.getTracks().forEach(track => track.stop());
-    permissionGranted = true;
-    hasPermissionBeenDenied = false;
-    showToast("麦克风权限已获取，可以开始录音");
-    isFirstTime = false;
+		isFirstTime = false; // 标记已经成功请求过一次权限
+	} catch (err) {
+		console.error("请求麦克风权限失败:", err);
+		permissionGranted = false; // 权限获取失败
 
-  } catch (err) {
-    console.error("权限失败:", err);
-    permissionGranted = false;
-    if (err.name === 'NotAllowedError') {
-      hasPermissionBeenDenied = true;
-      alert('您已拒绝麦克风权限，请刷新页面重试。');
-    } else {
-      alert(`麦克风异常：${err.message || '不支持录音'}`);
-    }
-  }
+		if (err.name === 'NotAllowedError') {
+			// 用户拒绝了权限
+			hasPermissionBeenDenied = true; // 标记权限曾被拒绝
+			alert('您已拒绝麦克风权限。请刷新页面，再次点击“获取权限”按钮，并在浏览器提示时允许访问。');
+		} else {
+			alert(`请求麦克风权限时发生错误: ${err.message}`);
+		}
+	}
 }
 
+// 事件监听器
+// 这个按钮只负责请求权限
 $('.input_voice_switch').click(function() {
 	requestMicrophonePermission();
 });
 
-// ---
+
 function initEvent() {
-	// 触摸事件（移动端）
 	bt_recoding.addEventListener("touchstart", async function(event) {
 		event.preventDefault();
 		posStart = event.touches[0].pageY;
 
 		showBlackBoxSpeak();
-		
-		//  新增：触发手机短震动
-			if (navigator.vibrate) {
-				navigator.vibrate(100); // 单次震动100毫秒
-			}
-
-		// 核心修改点：在任何操作之前，检查是否曾被拒绝
 		if (hasPermissionBeenDenied) {
-			showToast("麦克风权限已被拒绝，请刷新页面重试。");
-			initStatus();
-			showBlackBoxNone();
-			return; // 阻止后续一切操作
-		}
+					showToast("麦克风权限已被拒绝，请刷新页面重试。");
+					initStatus();
+					showBlackBoxNone();
+					return; // 阻止后续操作
+				}
 
-		// iOS首次处理（只有在没有被拒绝过的情况下才执行）
+		// iOS首次处理
 		if (isFirstTime) {
 			const initSuccess = await handleFirstTimeInit();
 			if (!initSuccess) {
-				// handleFirstTimeInit 失败通常意味着 preRequestPermission 失败
-				// 如果 preRequestPermission 失败是 NotAllowedError，hasPermissionBeenDenied 会被设置
-				// 此时也应该给出刷新页面的提示
-				if (hasPermissionBeenDenied) {
-					showToast("麦克风权限已被拒绝，请刷新页面重试。");
-				} else {
-					showToast("初始化失败，请重试。"); // 其他类型的初始化失败
-				}
 				initStatus();
 				showBlackBoxNone();
 				return;
 			}
 		}
 
-		// 开始录音（它会自己检查 permissionGranted）
+		// 开始录音
 		await startRecording();
 	});
 
@@ -1144,26 +1031,8 @@ function initEvent() {
 		event.preventDefault();
 		showBlackBoxSpeak();
 
-		// 核心修改点：在任何操作之前，检查是否曾被拒绝
-		if (hasPermissionBeenDenied) {
-			showToast("麦克风权限已被拒绝，请刷新页面重试。");
-			initStatus();
-			showBlackBoxNone();
-			return; // 阻止后续一切操作
-		}
-
 		if (isFirstTime) {
-			const initSuccess = await handleFirstTimeInit();
-			if (!initSuccess) {
-				if (hasPermissionBeenDenied) {
-					showToast("麦克风权限已被拒绝，请刷新页面重试。");
-				} else {
-					showToast("初始化失败，请重试。");
-				}
-				initStatus();
-				showBlackBoxNone();
-				return;
-			}
+			await handleFirstTimeInit();
 		}
 
 		await startRecording();
@@ -1187,6 +1056,11 @@ window.addEventListener('load', function() {
 });
 
 // =============== 其他辅助函数 ===============
+var initStatus = function() {
+	bt_recoding.value = '按住说话';
+	showBlackBoxNone();
+}
+
 var showBlackBoxSpeak = function() {
 	bt_recoding.value = '松开结束';
 	blackBoxSpeak.style.display = "block";
@@ -1219,6 +1093,25 @@ function clearBase64Output() {
 	if (base64Output) {
 		base64Output.innerText = '';
 	}
+}
+
+function updateBase64Output(base64) {
+	const base64Output = document.getElementById('base64Output');
+	if (base64Output) {
+		base64Output.innerHTML = `<pre>${base64}</pre>`;
+	}
+
+	const audioContainer = document.getElementById('audioContainer');
+	if (audioContainer) {
+		const audioElement = document.createElement('audio');
+		audioElement.controls = true;
+		audioElement.src = `data:audio/wav;base64,${base64}`;
+
+		audioContainer.innerHTML = '';
+		audioContainer.appendChild(audioElement);
+	}
+
+	console.log(base64);
 }
 
 
